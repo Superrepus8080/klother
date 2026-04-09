@@ -13,7 +13,7 @@ use axum::{
 };
 use once_cell::sync::OnceCell;
 use serde_json::{json, Value};
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::{Arc, Mutex}};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -24,8 +24,8 @@ use crate::segmentation::Segmentor;
 // ── Shared application state ──────────────────────────────────────────────────
 
 pub struct AppState {
-    pub pose_estimator: PoseEstimator,
-    pub segmentor:      Segmentor,
+    pub pose_estimator: Mutex<PoseEstimator>,
+    pub segmentor:      Mutex<Segmentor>,
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -43,8 +43,8 @@ async fn main() -> Result<()> {
     // Load models at startup — kept warm for the lifetime of the process.
     // ONNX Runtime sessions are Send + Sync so can live in Arc<AppState>.
     let state = Arc::new(AppState {
-        pose_estimator: PoseEstimator::load(&format!("{model_dir}/blazepose_full.onnx"))?,
-        segmentor:      Segmentor::load(&format!("{model_dir}/u2net.onnx"))?,
+        pose_estimator: Mutex::new(PoseEstimator::load(&format!("{model_dir}/blazepose_full.onnx"))?),
+        segmentor:      Mutex::new(Segmentor::load(&format!("{model_dir}/u2net.onnx"))?),
     });
 
     let app = Router::new()
@@ -128,7 +128,9 @@ async fn handle_measure(
 
     // ── Core pipeline (runs on Tokio thread pool — no blocking I/O) ──────────
     let measurements = tokio::task::spawn_blocking(move || {
-        measure::extract(&state.pose_estimator, &state.segmentor, &front, &side, height)
+        let mut pose = state.pose_estimator.lock().expect("pose mutex poisoned");
+        let mut seg  = state.segmentor.lock().expect("segmentor mutex poisoned");
+        measure::extract(&mut pose, &mut seg, &front, &side, height)
     })
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?

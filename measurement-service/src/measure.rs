@@ -29,8 +29,8 @@ pub struct BodyMeasurements {
 }
 
 pub fn extract(
-    pose:       &PoseEstimator,
-    segmentor:  &Segmentor,
+    pose:       &mut PoseEstimator,
+    segmentor:  &mut Segmentor,
     front_bytes: &[u8],
     side_bytes:  &[u8],
     height_cm:   f32,
