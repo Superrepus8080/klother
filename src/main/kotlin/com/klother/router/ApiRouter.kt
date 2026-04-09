@@ -6,10 +6,11 @@ import com.klother.service.MeasurementClient
 import com.klother.service.MeasurementException
 import com.klother.service.SizeMapper
 import com.klother.service.UserService
+import com.klother.coroutineHandler
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import io.vertx.kotlin.coroutines.coroutineHandler
+import io.vertx.kotlin.coroutines.coAwait
 import mu.KotlinLogging
 
 private val log = KotlinLogging.logger {}
@@ -61,9 +62,9 @@ class ApiRouter(
             ?: return badRequest(ctx, "side_photo is required")
 
         val frontBytes = ctx.vertx().fileSystem()
-            .readFile(frontUpload.uploadedFileName()).toCompletionStage().toCompletableFuture().get().bytes
+            .readFile(frontUpload.uploadedFileName()).coAwait().bytes
         val sideBytes  = ctx.vertx().fileSystem()
-            .readFile(sideUpload.uploadedFileName()).toCompletionStage().toCompletableFuture().get().bytes
+            .readFile(sideUpload.uploadedFileName()).coAwait().bytes
 
         // ── Call Rust measurement service ─────────────────────────────────────
         val measurements = try {
@@ -72,10 +73,11 @@ class ApiRouter(
             )
         } catch (e: MeasurementException) {
             log.warn { "Measurement failed: ${e.message}" }
-            return ctx.response()
+            ctx.response()
                 .setStatusCode(422)
                 .putHeader("Content-Type", "application/json")
                 .end(JsonObject().put("error", e.message).encode())
+            return
         }
 
         // ── Map to size profile ────────────────────────────────────────────────
@@ -107,7 +109,9 @@ class ApiRouter(
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun badRequest(ctx: RoutingContext, msg: String) {
-        ctx.response()
+        // Assign Future to local var so the function body evaluates to Unit,
+        // not Future<Void> (which would break callers using `return badRequest(...)`)
+        val ignored = ctx.response()
             .setStatusCode(400)
             .putHeader("Content-Type", "application/json")
             .end(JsonObject().put("error", msg).encode())

@@ -16,7 +16,6 @@ import io.vertx.ext.web.templ.jte.JteTemplateEngine
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.coAwait
 import mu.KotlinLogging
-import java.nio.file.Path
 
 private val log = KotlinLogging.logger {}
 
@@ -31,7 +30,10 @@ class MainVerticle : CoroutineVerticle() {
 
         // ── Database migrations ───────────────────────────────────────────────
         val db = Database(cfg.getJsonObject("db") ?: io.vertx.core.json.JsonObject())
-        vertx.executeBlocking { db.migrate() }.coAwait()
+        vertx.executeBlocking<Unit> { promise ->
+            try { db.migrate(); promise.complete() }
+            catch (e: Exception) { promise.fail(e) }
+        }.coAwait()
         val pgPool = db.createPool(vertx)
 
         // ── Services ──────────────────────────────────────────────────────────
@@ -40,12 +42,12 @@ class MainVerticle : CoroutineVerticle() {
         val userService   = UserService(pgPool)
 
         // ── JTE template engine ───────────────────────────────────────────────
-        // In devMode: resolves templates from disk (hot-reload).
-        // In production: uses precompiled classes from jte-classes/.
+        // create(Vertx, String) → DirectoryCodeResolver (hot-reload in dev)
+        // create()              → ClassPath resolver (precompiled, production)
         val templateEngine = if (devMode) {
-            JteTemplateEngine.create(vertx, Path.of("src/main/jte"))
+            JteTemplateEngine.create(vertx, "src/main/jte")
         } else {
-            JteTemplateEngine.create(vertx)
+            JteTemplateEngine.create()
         }
 
         // ── Root router ───────────────────────────────────────────────────────

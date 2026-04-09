@@ -37,7 +37,7 @@
                 <p class="text-xs text-brand/50">
                     Also fits:
                     @for(Object alt : tops.getJsonArray("also_fits", new io.vertx.core.json.JsonArray()))
-                    <span class="font-medium">${alt}</span>
+                    <span class="font-medium">${alt.toString()}</span>
                     @endfor
                 </p>
                 <div class="mt-3 h-1.5 rounded-full bg-brand/10 overflow-hidden">
@@ -56,7 +56,7 @@
                 <p class="text-xs text-brand/50">
                     Also fits:
                     @for(Object alt : bottoms.getJsonArray("also_fits", new io.vertx.core.json.JsonArray()))
-                    <span class="font-medium">${alt}</span>
+                    <span class="font-medium">${alt.toString()}</span>
                     @endfor
                 </p>
                 <div class="mt-3 h-1.5 rounded-full bg-brand/10 overflow-hidden">
@@ -75,7 +75,7 @@
                 <p class="text-xs text-brand/50">
                     Also fits:
                     @for(Object alt : dresses.getJsonArray("also_fits", new io.vertx.core.json.JsonArray()))
-                    <span class="font-medium">${alt}</span>
+                    <span class="font-medium">${alt.toString()}</span>
                     @endfor
                 </p>
                 <div class="mt-3 h-1.5 rounded-full bg-brand/10 overflow-hidden">

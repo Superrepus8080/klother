@@ -3,11 +3,11 @@ package com.klother.router
 import com.klother.model.Gender
 import com.klother.service.SizeMapper
 import com.klother.service.UserService
+import com.klother.coroutineHandler
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.templ.jte.JteTemplateEngine
 import io.vertx.kotlin.coroutines.coAwait
-import io.vertx.kotlin.coroutines.coroutineHandler
 import mu.KotlinLogging
 
 private val log = KotlinLogging.logger {}
