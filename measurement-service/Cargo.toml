@@ -1,0 +1,47 @@
+[package]
+name    = "klother-measure"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "klother-measure"
+path = "src/main.rs"
+
+[dependencies]
+# ── HTTP server ───────────────────────────────────────────────────────────────
+axum              = { version = "0.7",  features = ["multipart"] }
+tower             = "0.4"
+tower-http        = { version = "0.5", features = ["cors", "trace"] }
+tokio             = { version = "1",   features = ["full"] }
+
+# ── Serialisation ─────────────────────────────────────────────────────────────
+serde             = { version = "1", features = ["derive"] }
+serde_json        = "1"
+
+# ── Image processing ──────────────────────────────────────────────────────────
+image             = { version = "0.25", features = ["jpeg", "png"] }
+imageproc         = "0.25"
+
+# ── ONNX inference (MediaPipe BlazePose + U2-Net) ─────────────────────────────
+# `download-binaries` fetches ONNX Runtime C++ libs automatically.
+# For GPU support change to features = ["cuda"]
+ort               = { version = "2",   features = ["download-binaries"] }
+ndarray           = "0.16"
+
+# ── Error handling ────────────────────────────────────────────────────────────
+thiserror         = "1"
+anyhow            = "1"
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+tracing           = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+bytes             = "1"
+once_cell         = "1"
+
+[profile.release]
+opt-level    = 3
+lto          = true
+codegen-units = 1
+strip        = true

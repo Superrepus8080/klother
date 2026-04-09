@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+build/
+out/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+
+# JTE precompiled templates
+jte-classes/
+
+# Kotlin
+*.kotlin_module
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# Node (Tailwind build)
+node_modules/
+src/main/resources/static/css/output.css
+
+# Rust
+measurement-service/target/
+measurement-service/.cargo/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.override.yml
