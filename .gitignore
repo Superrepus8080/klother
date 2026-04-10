@@ -32,6 +32,10 @@ src/main/resources/static/css/output.css
 # Rust
 measurement-service/target/
 measurement-service/.cargo/
+measurement-service/models/
+
+# Runtime uploads
+file-uploads/
 
 # OS
 .DS_Store
