@@ -89,23 +89,27 @@ impl PoseEstimator {
 
         let outputs = self
             .session
-            .run(ort::inputs!["input" => tensor])
+            .run(ort::inputs!["input_1" => tensor])
             .context("BlazePose inference failed")?;
 
         // ── Parse flat output [1, 195] = 33 landmarks × 5 values ─────────────────
-        // If your exported model has a different output name, update "output_0" here.
-        let (_, flat) = outputs["output_0"]
+        // tf2onnx exports the landmark output as "Identity" (first output node).
+        let (_, flat) = outputs["Identity"]
             .try_extract_tensor::<f32>()
             .context("Failed to extract pose output tensor")?;
 
+        // tf2onnx exports x/y as pixel coords in the 256×256 input patch (not [0,1]).
+        // Normalise by input size, then scale to original image dimensions.
+        let scale = BLAZEPOSE_INPUT_SIZE as f32;
         let landmarks: Vec<Landmark> = (0..N_LANDMARKS)
             .map(|i| {
                 let base = i * 5;
                 Landmark {
-                    // flat[base + 0..1] are [0,1]-normalised x, y within the 256×256 patch
-                    x:          flat[base]     * orig_w as f32,
-                    y:          flat[base + 1] * orig_h as f32,
+                    x:          (flat[base]     / scale) * orig_w as f32,
+                    y:          (flat[base + 1] / scale) * orig_h as f32,
                     z:          flat[base + 2],
+                    // visibility is a raw logit; positive = visible, negative = not.
+                    // Keep as-is; validate_landmarks checks > 0.5 (any positive logit is fine).
                     visibility: flat[base + 3],
                 }
             })

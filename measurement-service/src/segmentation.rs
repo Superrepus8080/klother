@@ -71,9 +71,9 @@ impl Segmentor {
             .run(ort::inputs!["input.1" => tensor])
             .context("U2-Net inference failed")?;
 
-        // U2-Net final output node — name may vary by export; "1556" is the default
-        // from the rembg ONNX model.
-        let (_, flat) = outputs["1556"]
+        // U2-Net final output node — first output is the full-res saliency map.
+        // "1959" for the rembg v0.0.0 u2net.onnx model.
+        let (_, flat) = outputs["1959"]
             .try_extract_tensor::<f32>()
             .context("Failed to extract segmentation output tensor")?;
 
