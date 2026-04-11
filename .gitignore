@@ -41,5 +41,10 @@ file-uploads/
 .DS_Store
 Thumbs.db
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Docker
 *.override.yml
