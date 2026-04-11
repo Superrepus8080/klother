@@ -88,9 +88,15 @@ def klother_code_index(
 
         with file["chunks"].row() as chunk:
             # Embed with a lightweight local model (no API key required)
+            # Use the ONNX-optimized backend to avoid downloading PyTorch weights.
+            # model_O4.onnx (44 MB) is already cached locally.
             chunk["embedding"] = chunk["text"].transform(
                 cocoindex.functions.SentenceTransformerEmbed(
-                    model="sentence-transformers/all-MiniLM-L6-v2"
+                    model="sentence-transformers/all-MiniLM-L6-v2",
+                    args={
+                        "backend": "onnx",
+                        "model_kwargs": {"file_name": "onnx/model_O4.onnx"},
+                    },
                 )
             )
 
@@ -109,7 +115,7 @@ def klother_code_index(
         vector_indexes=[
             cocoindex.index.VectorIndexDef(
                 field_name="embedding",
-                metric=cocoindex.index.VectorSimilarityMetric.COSINE,
+                metric=cocoindex.index.VectorSimilarityMetric.COSINE_SIMILARITY,
             )
         ],
     )
