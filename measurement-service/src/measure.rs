@@ -97,6 +97,11 @@ pub fn extract(
     let inseam_px = (landmarks[lm::LEFT_ANKLE].y - landmarks[lm::LEFT_HIP].y).abs();
     let inseam_cm = inseam_px / ppcm;
 
+    // ── 10. Sanity-check measurements are within human range ─────────────────
+    // If any measurement is wildly out of range the photo is likely a close-up
+    // (person too close to camera) or the mask includes non-body objects.
+    validate_measurements(chest_cm, waist_cm, hip_cm, shoulder_width_cm, inseam_cm)?;
+
     Ok(BodyMeasurements {
         height_cm,
         chest_cm:          round1(chest_cm),
@@ -137,6 +142,37 @@ fn half_widths(
     let a = (front_px / ppcm) / 2.0;
     let b = (side_px  / ppcm) / 2.0;
     (a.max(0.1), b.max(0.1))   // prevent degenerate ellipse
+}
+
+/// Sanity-check output measurements are within plausible human ranges.
+/// Values outside these ranges indicate a bad photo (e.g. close-up, seated,
+/// mask including chair/furniture) rather than a measurement error.
+fn validate_measurements(
+    chest_cm: f32, waist_cm: f32, hip_cm: f32,
+    shoulder_cm: f32, inseam_cm: f32,
+) -> Result<()> {
+    let hint = "Please use a full-body standing photo taken from ~3 m away, \
+                in form-fitting clothing against a plain background.";
+
+    macro_rules! check {
+        ($val:expr, $name:expr, $lo:expr, $hi:expr) => {
+            if !($lo..=$hi).contains(&$val) {
+                bail!(
+                    "{} measurement ({:.0} cm) is outside the expected human range \
+                     ({}-{} cm). {}",
+                    $name, $val, $lo, $hi, hint
+                );
+            }
+        };
+    }
+
+    check!(chest_cm,    "Chest",          55.0, 175.0);
+    check!(waist_cm,    "Waist",          45.0, 175.0);
+    check!(hip_cm,      "Hip",            55.0, 185.0);
+    check!(shoulder_cm, "Shoulder width", 28.0,  70.0);
+    check!(inseam_cm,   "Inseam",         50.0, 115.0);
+
+    Ok(())
 }
 
 /// Sanity check: ensure key landmarks are visible enough.
